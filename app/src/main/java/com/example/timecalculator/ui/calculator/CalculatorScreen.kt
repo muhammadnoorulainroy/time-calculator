@@ -85,9 +85,10 @@ fun CalculatorScreen(
                         }
                     }
                     
-                    if (state.accumulatedDuration != null) {
+                    // Show expression after calculation (e.g., "3d 13h + 5m")
+                    state.expression?.let { expr ->
                         Text(
-                            text = state.display,
+                            text = expr,
                             style = MaterialTheme.typography.bodyLarge,
                             color = Color.White.copy(alpha = 0.7f),
                             textAlign = TextAlign.End

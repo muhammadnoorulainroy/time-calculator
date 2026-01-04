@@ -10,11 +10,13 @@ import kotlinx.coroutines.flow.update
 // State class holding all calculator UI data
 data class CalculatorState(
     val display: String = "0m",
+    val expression: String? = null,
     val currentInput: String = "",
     val currentDays: Int = 0,
     val currentHours: Int = 0,
     val currentMinutes: Int = 0,
     val accumulatedDuration: Duration? = null,
+    val expressionParts: List<String> = emptyList(),
     val pendingOperation: Boolean = false,
     val errorMessage: String? = null
 )
@@ -32,7 +34,7 @@ class CalculatorViewModel : ViewModel() {
     // Handle digit button press (0-9)
     fun onDigit(digit: Int) {
         _state.update { current ->
-            val clearedError = current.copy(errorMessage = null)
+            val clearedError = current.copy(errorMessage = null, expression = null)
             
             if (current.currentInput.length >= MAX_INPUT_LENGTH) {
                 return@update clearedError
@@ -88,6 +90,7 @@ class CalculatorViewModel : ViewModel() {
                 currentHours = duration.hours,
                 currentMinutes = duration.minutes,
                 errorMessage = null,
+                expression = null,
                 display = buildDisplayString(
                     duration.days,
                     duration.hours,
@@ -128,14 +131,23 @@ class CalculatorViewModel : ViewModel() {
                 currentDuration
             }
             
+            // Track expression parts for display after =
+            val newExpressionParts = if (currentDuration != Duration.ZERO) {
+                current.expressionParts + currentDuration.toString()
+            } else {
+                current.expressionParts
+            }
+            
             current.copy(
                 accumulatedDuration = newAccumulated,
+                expressionParts = newExpressionParts,
                 currentDays = 0,
                 currentHours = 0,
                 currentMinutes = 0,
                 currentInput = "",
                 pendingOperation = true,
                 errorMessage = null,
+                expression = null,
                 display = "${newAccumulated} +"
             )
         }
@@ -168,14 +180,29 @@ class CalculatorViewModel : ViewModel() {
                 currentDuration
             }
             
+            // Build expression string showing what was added
+            val finalExpressionParts = if (currentDuration != Duration.ZERO) {
+                current.expressionParts + currentDuration.toString()
+            } else {
+                current.expressionParts
+            }
+            
+            val expressionString = if (finalExpressionParts.size > 1) {
+                finalExpressionParts.joinToString(" + ")
+            } else {
+                null
+            }
+            
             current.copy(
                 accumulatedDuration = null,
+                expressionParts = emptyList(),
                 currentDays = result.days,
                 currentHours = result.hours,
                 currentMinutes = result.minutes,
                 currentInput = "",
                 pendingOperation = false,
                 errorMessage = null,
+                expression = expressionString,
                 display = result.toString()
             )
         }
